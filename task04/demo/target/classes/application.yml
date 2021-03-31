@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456
+    url: jdbc:mysql://127.0.0.1:3306/test?characterEncoding=utf-8&useSSL=false&serverTimezone=UTC
+  jpa:
+    hibernate:
+      ddl-auto: update
+      dialect: org.hibernate.dialect.MySQL5Dialect
+    show-sql: false
+  jackson:
+    default-property-inclusion: non_null
+  redis:
+    host: 192.168.189.138
+    port: 6379
+server:
+  port: 8086
+
+elasticsearch:
+    cluster:
+        name: test
+    host: 192.168.189.138
+    port: 9200
+
+JsonToSqlUtill:
+  field: id,name,description,pictureUrl,url,createDate #数据字段名，按返回顺序写(英文,隔开)
+  timeField: createDate,updateDate #格式是时间的字段(英文,隔开)
+  timeFieldType: true #是否为时间戳格式
+  tableName: data #数据库表名
+  #填写所需要数据data的路径 例如：{"store": { "data": [{"category": "reference"，"price": 8.95}，路径为：store.data
+  dataPath: data.data
+  url: https://gymbot.cn/pushlink/all #url
