@@ -9,6 +9,7 @@
 
 4. 返回的数据如果存在时间戳，需要进行解析再存入到数据库中
 
+5. 使用http连接池，减低频繁进行连接断开的开销
 
 ## 二、思路
 
@@ -37,11 +38,29 @@ jsonPath：用于解析字符串
 新增一个HttpClientUtil工具类来使用：
 ```Java
 public class HttpClientUtil {
+    
+    private static CloseableHttpClient httpClient = null;
+
+    public static void init() {
+        //1.创建连接池管理器，默认情况下，此实现将为每个给定路由创建不超过2个并发连接，并且总共不超过20个连接
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(60000,//1.1
+                TimeUnit.MILLISECONDS);//tomcat服务器默认支持保持60s的链接，超过60s，会关闭客户端的链接
+        connectionManager.setMaxTotal(1000);//设置连接器最多同时支持1000个链接
+        connectionManager.setDefaultMaxPerRoute(50);//设置每个路由最多支持50个链接。注意这里路由是指IP+PORT或者指域名
+
+        //2.创建httpclient对象
+        httpClient = HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .disableAutomaticRetries()
+                .build();
+    }
+
 
     public static String doGet(String url) {
+        //初始化连接池
+        if(httpClient == null)
+            init();
         String httpResponse = null;
-        // 获得Http客户端(可以理解为:你得先有一个浏览器;注意:实际上HttpClient与浏览器是不一样的)
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         // 创建Get请求
         HttpGet httpGet = new HttpGet(url);
         // 响应模型
@@ -60,6 +79,8 @@ public class HttpClientUtil {
 
             // 将上面的配置信息 运用到这个Get请求里
             httpGet.setConfig(requestConfig);
+
+
             // 由客户端执行(发送)Get请求
             response = httpClient.execute(httpGet);
             // 从响应模型中获取响应实体
@@ -69,26 +90,25 @@ public class HttpClientUtil {
         } catch (ParseException | IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                // 释放资源
-                if (httpClient != null) {
-                    httpClient.close();
+            //回收连接
+            if (null != response) {
+                try {
+                    EntityUtils.consume(response.getEntity());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                if (response != null) {
-                    response.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         return httpResponse;
     }
 
     public static String doPost(String url) throws IOException {
-
+        if(httpClient == null)
+            init();
         String httpResponse = null;
         // 获得Http客户端(可以理解为:你得先有一个浏览器;注意:实际上HttpClient与浏览器是不一样的)
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+
         // 创建Post请求
         HttpPost httpPost = new HttpPost(url);
         // 响应模型
@@ -107,26 +127,25 @@ public class HttpClientUtil {
         } catch (ParseException | IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                // 释放资源
-                if (httpClient != null) {
-                    httpClient.close();
+            //回收连接
+            if (null != response) {
+                try {
+                    EntityUtils.consume(response.getEntity());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                if (response != null) {
-                    response.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         return httpResponse;
     }
 
     public static String doPostWithEntity(String url,String json) throws IOException {
-
+        if(httpClient == null)
+            init();
         String httpResponse = null;
         // 获得Http客户端(可以理解为:你得先有一个浏览器;注意:实际上HttpClient与浏览器是不一样的)
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+
         // 创建Post请求
         HttpPost httpPost = new HttpPost(url);
         // 响应模型
@@ -149,16 +168,13 @@ public class HttpClientUtil {
         } catch (ParseException | IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                // 释放资源
-                if (httpClient != null) {
-                    httpClient.close();
+            //回收连接
+            if (null != response) {
+                try {
+                    EntityUtils.consume(response.getEntity());
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                if (response != null) {
-                    response.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         return httpResponse;
@@ -382,4 +398,4 @@ getSqlWithJson(json)：附带一个json字符串进行请求，返回一个完�
 
 ![image.png](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/093ac563e00c478f8ae7bd311d11fc4f~tplv-k3u1fbpfcp-watermark.image)
 
-最后使用自己的方式执行这段SQL即可。
+在数据库创建好对应的数据表，最后使用自己的方式执行这段SQL即可。
