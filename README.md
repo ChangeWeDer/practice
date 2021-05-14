@@ -12,7 +12,7 @@ task03：基于gitlab+jenkins+maven的系统发布流水线搭建全流程
 
 task04：使用Java实现与客户数据库之间的同步工具（客户提供访问接口，我们使用JAVA 的httpclient进行访问，将返回的json进行解析，自动化生成SQL后执行到本地）
 
-task05：使用Java实现与客户数据库之间的同步工具（客户提供访问接口，我们使用JAVA 的httpclient进行访问，将返回的json进行解析，自动化生成SQL后执行到本地）
+task05：优化数据库同步工具，解决数据量达到十万后，执行速度过慢的问题
 
 task06：使用Nginx配置视频防盗链
 
